@@ -10,9 +10,13 @@
 			<div id="signup-body">
 				<p>Being healthy is important.  Supporting your community is important.  Do both by signing up to be notified when we launch.  </p>
 
-				<form class="form-inline form-space">
+				<form class="form-inline form-space" action="affiliate-area" method="post">
 					<input class="input" type="text" name="email" placeholder="Email" />
-					<input class="btn btn-primary" type="submit" name="submit" value="Sign up" />
+					<input class="btn btn-primary" type="submit" name="affiliates-registration-submit" value="Sign up" />
+					<?php 
+					$nonce              = 'affiliates-registration-nonce';
+		$nonce_action       = 'affiliates-registration';
+					wp_nonce_field( $nonce_action, $nonce, true, false ); ?>
 				</form>
 			</div> <!-- #signup-body -->
 		</div> <!-- #signup-box -->
