@@ -115,3 +115,85 @@ add_action( 'wp_enqueue_scripts', 'hx_affiliates_scripts' );
  * Implement the Custom Header feature
  */
 //require( get_template_directory() . '/inc/custom-header.php' );
+
+/**
+ * Function to help quickly register a user
+ */
+
+function add_new_user()
+{
+	if(isset($_POST['register_now'])):
+		$user = $_POST['user'];
+		$pass = $_POST['password'];
+		$email = $_POST['enter_email'];
+		$first_name = $_POST['first'];
+		$last_name = $_POST['last'];
+		$userdata = array(
+		'user_login' => $user,
+		'first_name' => $first_name,
+		'last_name' => $last_name,
+		'user_pass' => $pass,
+		'user_email' => $email,
+		'role' => 'subscriber'
+		);
+		wp_insert_user($userdata);
+
+		$creds = array();
+		$creds['user_login'] = $user;
+		$creds['user_password'] = $pass;
+		$creds['remember'] = true;
+		$user = wp_signon( $creds );
+		wp_redirect( home_url() . '/affiliate-area', $status );
+		exit;
+
+	endif;
+}
+add_action('init', 'add_new_user');
+
+
+function show_user_form($data)
+{	if(!is_user_logged_in()):
+	?>
+	<form class="form-horizontal" method="post">
+		<div class="control-group">
+    		<label class="control-label" for="inputEmail">Email</label>
+    		<div class="controls">
+      			<input name="enter_email" type="text" id="inputEmail" placeholder="Email" <?php if($_POST['email'] != ''): echo'value="' . $_POST['email'] . '"'; endif; ?>>
+    		</div>
+  		</div>
+  		<div class="control-group">
+    		<label class="control-label" for="inputUser">User</label>
+    		<div class="controls">
+      			<input type="text" id="inputUser" placeholder="Username" name="user">
+    		</div>
+  		</div>
+  		<div class="control-group">
+    		<label class="control-label" for="inputFirst">First name</label>
+    		<div class="controls">
+      			<input type="text" id="inputFirst" placeholder="First name" name="first">
+    		</div>
+  		</div>
+  		<div class="control-group">
+    		<label class="control-label" for="inputLast">Last name</label>
+    		<div class="controls">
+      			<input type="text" id="inputLast" placeholder="Last name" name="last">
+    		</div>
+  		</div>
+  		<div class="control-group">
+    		<label class="control-label" for="inputPass">Password</label>
+    		<div class="controls">
+      			<input type="password" id="inputPass" placeholder="Password" name="password">
+    		</div>
+  		</div>
+  		<div class="control-group">
+    		<div class="controls">
+      			<button type="submit" class="btn" name="register_now">Register</button>
+    		</div>
+  		</div>
+	</form>
+	<?php
+	else:
+		echo 'Welcome to the site';
+	endif;
+}
+add_shortcode('user_reg','show_user_form');
