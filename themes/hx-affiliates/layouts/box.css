@@ -1,0 +1,54 @@
+/*
+* CSS */
+
+footer
+{
+	text-align: center;
+}
+header
+{
+	text-align: center;
+	height: 150px;
+	vertical-align: middle;
+}
+
+.header 
+{
+}
+body
+{
+	background: url(http://subtlepatterns.subtlepatterns.netdna-cdn.com/patterns/grid.png);
+}
+
+.img-center
+{
+	margin: 25px auto;
+}
+
+#signup-header
+{
+	background: url(http://subtlepatterns.com/patterns/lil_fiber.png);
+	padding: 10px;
+}
+
+#signup-box
+{
+	margin-top: 50px;
+	border: 1px solid #F0F0D8;
+	text-align: center;
+	margin-bottom: 50px;
+}
+
+#signup-body
+{
+	padding: 10px;
+	padding-top: 20px;
+	font-size: 16px;
+	font-weight: lighter;
+	background: #FFF;
+}
+
+.form-space
+{
+	margin-top: 30px;
+}
