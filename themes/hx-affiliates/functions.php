@@ -116,51 +116,132 @@ add_action( 'wp_enqueue_scripts', 'hx_affiliates_scripts' );
  */
 //require( get_template_directory() . '/inc/custom-header.php' );
 
-/**
- * Function to help quickly register a user
- */
 
+
+/**************************
+ * ADDED BY JONATHON MCDONALD
+ * Oct 1, 2012
+ **/
+
+
+/**
+ * Function to help quickly register a user,
+ * and add them to the affiliates category.  
+ */
 function add_new_user()
 {
+	// If the user has attempted to register
 	if(isset($_POST['register_now'])):
-		$user = $_POST['user'];
-		$pass = $_POST['password'];
-		$email = $_POST['enter_email'];
-		$first_name = $_POST['first'];
-		$last_name = $_POST['last'];
-		$userdata = array(
-		'user_login' => $user,
-		'first_name' => $first_name,
-		'last_name' => $last_name,
-		'user_pass' => $pass,
-		'user_email' => $email,
-		'role' => 'subscriber'
-		);
-		wp_insert_user($userdata);
 
+		// Begin by sanitizing the data
+		$user = sanitize_user( $_POST['user'] );
+		$pass = $_POST['password'];
+		$email = sanitize_email( $_POST['enter_email'] );
+		$first_name = sanitize_text_field( $_POST['first'] );
+		$last_name = sanitize_text_field( $_POST['last'] );
+
+		// Next we need to perform a check to see if the user is already
+		// registered
+		if( username_exists( $user ) ):
+			$jon_error = "A user already has that username!";
+		endif;
+
+		if( email_exists( $email ) ):
+			$jon_error = "A user already has that email!";
+		endif;
+
+		if( $email == '' || $pass == '' || $user == '' || $first_name == '' || $last_name == '' ):
+			$jon_error = "No email";
+		endif;
+
+		if( isset($jon_error) ):
+			return;
+		endif;
+
+		// Prepare the data to add to the database of users
+		$userData = array(
+			'user_login' => $user,
+			'first_name' => $first_name,
+			'last_name' => $last_name,
+			'user_pass' => $pass,
+			'user_email' => $email,
+			'role' => 'subscriber'
+		);
+
+		// Prepare the affiliate data to add as an affiliate
+		$affiliateData = array(
+			'user_login' => $user,
+			'first_name' => $first_name,
+			'last_name' => $last_name,
+			'email' => $email,
+		);
+
+		// Add the user to WP
+		$user_id = wp_insert_user($userData);
+		
+		// Register the user as an affiliate
+		$affil = new Affiliates_Registration;
+		$affil->store_affiliate($user_id, $affiliateData);
+
+		// Log the user in, redirect to the affiliate area
 		$creds = array();
 		$creds['user_login'] = $user;
 		$creds['user_password'] = $pass;
 		$creds['remember'] = true;
 		$user = wp_signon( $creds );
-		wp_redirect( home_url() . '/affiliate-area', $status );
+		wp_redirect( home_url() . '/affiliate-area');
 		exit;
 
 	endif;
 }
 add_action('init', 'add_new_user');
 
-
+/**
+ * Shows a registration form, saving data
+ * if possible.  
+ */
 function show_user_form($data)
-{	if(!is_user_logged_in()):
+{	
+	// First make sure this is not a logged in user!  
+	if(!is_user_logged_in()):
+		$email = "";
+		$user = "";
+		$first = "";
+		$last = "";
+
+		// Check if the user came from the home page
+		if(isset($_POST['email'])):
+			$email = $_POST['email'];
+			do_action('save_email');
+		endif;
+
+		// Check if the user has attempted to fill out the form
+		if(isset($_POST['register_now'])):
+			// Get all the data they filled out so they don't have to re-enter the data
+			$user = sanitize_user( $_POST['user'] );
+			$email = sanitize_email( $_POST['enter_email'] );
+			$first = $_POST['first'];
+			$last = $_POST['last'];
+			$jon_error = "";
+
+			if( username_exists( $user ) ):
+				$jon_error .= "A user already has that username! <br />";
+			endif;
+
+			if( email_exists( $email ) ):
+				$jon_error .= "A user already has that email! <br />";
+			endif;
+
+			echo $jon_error;
+		endif;
+
+
+		// Below is boiler HTML for a form, un-commented.  
 	?>
 	<form class="form-horizontal" method="post">
-		<div class="control-group">
-    		<label class="control-label" for="inputEmail">Email</label>
-    		<div class="controls">
-      			<input name="enter_email" type="text" id="inputEmail" placeholder="Email" <?php if($_POST['email'] != ''): echo'value="' . $_POST['email'] . '"'; endif; ?>>
-    		</div>
-  		</div>
+
+      	<input name="enter_email" type="hidden" id="inputEmail" placeholder="Email" <?php if(isset($email)): echo'value="' . $email . '"'; endif; ?>>
+
   		<div class="control-group">
     		<label class="control-label" for="inputUser">User</label>
     		<div class="controls">
@@ -170,13 +251,13 @@ function show_user_form($data)
   		<div class="control-group">
     		<label class="control-label" for="inputFirst">First name</label>
     		<div class="controls">
-      			<input type="text" id="inputFirst" placeholder="First name" name="first">
+      			<input type="text" id="inputFirst" placeholder="First name" name="first" <?php if(isset($first)): echo'value="' . $first . '"'; endif; ?>>
     		</div>
   		</div>
   		<div class="control-group">
     		<label class="control-label" for="inputLast">Last name</label>
     		<div class="controls">
-      			<input type="text" id="inputLast" placeholder="Last name" name="last">
+      			<input type="text" id="inputLast" placeholder="Last name" name="last" <?php if(isset($last)): echo'value="' . $last . '"'; endif; ?>>
     		</div>
   		</div>
   		<div class="control-group">
@@ -192,8 +273,58 @@ function show_user_form($data)
   		</div>
 	</form>
 	<?php
+	// Uh oh, they're logged in.  Maybe something went wrong?
 	else:
 		echo 'Welcome to the site';
 	endif;
 }
 add_shortcode('user_reg','show_user_form');
+
+/**
+ * Installs the table, run manually
+ * to collect emails.  
+ */
+function jm_table_install ()
+{
+	// Get global wpdb
+	global $wpdb;
+
+	// Prepare a table name, and change to true
+	$table_name = $wpdb->prefix . 'jm_emails';
+	$double_check = false;
+
+	// SQL statement to create table
+	$sql = "CREATE TABLE $table_name (
+  	id mediumint(9) NOT NULL AUTO_INCREMENT,
+  	time datetime DEFAULT '0000-00-00 00:00:00' NOT NULL,
+  	email text NOT NULL,
+  	UNIQUE KEY id (id)
+    );";
+
+	// Initialize the table
+	require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+	if( $double_check == true)
+    	dbDelta($sql);
+
+}
+add_action('init', 'jm_table_install');
+
+/**
+ * Saves email to the table
+ */
+function jm_save_email($email)
+{
+	// Initialize globals 
+	if($email == '')
+		return;
+
+	
+}
+
+
+
+
+
+
+
+
