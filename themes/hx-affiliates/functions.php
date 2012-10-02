@@ -211,8 +211,8 @@ function show_user_form($data)
 
 		// Check if the user came from the home page
 		if(isset($_POST['email'])):
-			$email = $_POST['email'];
-			do_action('save_email');
+			$email = sanitize_email( $_POST['email'] );
+			do_action('save_email', $email);
 		endif;
 
 		// Check if the user has attempted to fill out the form
@@ -315,12 +315,30 @@ add_action('init', 'jm_table_install');
 function jm_save_email($email)
 {
 	// Initialize globals 
+	global $wpdb;
+
+	// If the email is empty, just return gracefully
 	if($email == '')
 		return;
 
-	
-}
+	// Prep the table, pepare to see if email exists
+	$table_name = $wpdb->prefix . 'jm_emails';
+	$email_exists = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM $table_name 
+		WHERE email='$email'") );
 
+	// If the email already exists return gracefully
+	if( $email_exists > 0)
+		return;
+
+	// Otherwise...let's add it
+	$wpdb->insert($table_name,
+		array(
+			'email' => $email,
+			'time' => date("Y, m, d")
+			)
+		);
+}
+add_action('save_email', 'jm_save_email');
 
 
 
